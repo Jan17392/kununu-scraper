@@ -5,6 +5,11 @@ import fs from 'fs'
 import { Promise } from 'bluebird'
 
 let kununuBaseprint = [
+  'Firma',
+  'Branche',
+  'Gesamtbewertung',
+  'Empfehlung',
+  'Anzahl Bewertungen',
   'Arbeitsatmosphäre',
   'Vorgesetztenverhalten',
   'Kollegenzusammenhalt',
@@ -27,17 +32,24 @@ const scrapeKununuPage = (rawCompanyName) => {
       if(!error && typeof body !== 'undefined'){
         let $ = cheerio.load(body);
 
-        let excelRow = ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-']
+        let excelRow = ['-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-']
         let companyName = $('.company-name').text().trim()
         let industry = $('.company-profile-sub-title').children().last().text().trim()
+        let totalScore = $('.review-rating-value').text().trim()
+        let recommendationScore = $('.review-recommend-value').text().trim()
+        let numberOfReviews = $('.company-profile-subnav').find('.title-number').first().text().trim()
 
         excelRow[0] = typeof companyName !== 'undefined' ? companyName : rawCompanyName
-        excelRow[1] = typeof industry !== 'undefined' ? industry : ''
+        excelRow[1] = typeof industry !== 'undefined' ? industry : '-'
+        excelRow[2] = typeof totalScore !== 'undefined' ? totalScore.replace(',', '.') : '-'
+        excelRow[3] = typeof recommendationScore !== 'undefined' ? recommendationScore : '-'
+        excelRow[4] = typeof numberOfReviews !== 'undefined' ? numberOfReviews : '-'
+
 
         $('.company-profile-rating-group').find('.rating-group').each(function( index ) {
           let ratingTitle = $(this).find('.rating-title').text().trim()
           let ratingValue = $(this).find('.rating-badge').text().trim()
-          let excelRowIndex = kununuBaseprint.indexOf(ratingTitle) + 2
+          let excelRowIndex = kununuBaseprint.indexOf(ratingTitle)
 
           if(typeof ratingValue !== 'undefined' && excelRowIndex !== -1){
             excelRow[excelRowIndex] = ratingValue.replace(',', '.')
@@ -52,7 +64,7 @@ const scrapeKununuPage = (rawCompanyName) => {
   })
 }
 
-fs.writeFile('./excelFile.csv', 'Firma,Branche,' + kununuBaseprint + '\n', function(err) {
+fs.writeFile('./excelFile.csv', kununuBaseprint + '\n', function(err) {
   if(err) {
     return console.log(err)
   }
